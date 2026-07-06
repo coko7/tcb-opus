@@ -39,7 +39,7 @@ client.on('messageCreate', async (message) => {
   if (!isListenChannel(message.channel.id)) return;
 
   // Check whether the message contains one of the desired mangas
-  const manga = getMangaTitleFromMessage(message.content);
+  const manga = getMangaTitleFromMessage(message);
 
   if (manga && manga.active) {
     logger.info(
@@ -186,8 +186,14 @@ function getMangaTitleFromMessage(msg) {
   // Remove URL from message (TCB's hostname contains 'onepiece')
   const pattern =
     /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/=]*)/gm;
-  const msgNoURL = msg.replace(pattern, '');
-
+  let msgNoURL = msg.content.replace(pattern, '');
+  // If the message contains embeds, add their content to the msg string
+  msg.embeds.forEach((embed) => {
+    msgNoURL += embed.title + embed.description;
+    embed.fields.forEach((field) => {
+        msgNoURL += field.name + field.value;
+    });
+  });
   const manga = mangas.find((m) => {
     // Use regular expression instead of name if 'regexName' is defined
     if (m.regex) {
